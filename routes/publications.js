@@ -1,7 +1,9 @@
-import {Router} from 'express';
+import { Router } from "express";
+import { testPublication } from "../controllers/publication.js";
 
-const publicationRoutes =  Router();
+const router = Router();
+
+router.get('/test-publication', testPublication);
 
 
-
-export default publicationRoutes;
+export default router;
