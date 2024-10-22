@@ -1,7 +1,10 @@
 import jwt from "jwt-simple";
 import moment from "moment"
+import dotenv from "dotenv";
 
-const secret = 'SECRET_KEY_PROJECT_SoCiAl_Net';
+dotenv.config();
+
+const secret = process.env.SECRET_KEY;
 
 const createToken = (user) => {
     const payload = {
@@ -10,8 +13,9 @@ const createToken = (user) => {
         iat: moment().unix(),
         exp: moment().add(1, 'days').unix()
     }
+    return jwt.encode(payload, secret);
 }
-return jwt.encode(payload, secret);
+
 
 export {
     secret,
