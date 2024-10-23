@@ -102,3 +102,37 @@ export const login = async (req, res) => {
         });
     }
 };
+
+export const profile = async (req, res) => {
+    try{
+        const userId = req.params.id;
+        
+        if(!req.user || !req.eser.userId) {
+            return res.status(401).send({
+                status: "success",
+                message: "usuario no autenticado"
+            })
+        }
+
+        const userProfile = await User.findById(userId).select("-password -role -email -_v")
+        if(!userProfile) {
+            return res.status(404).send({
+                status: "error",
+                message: "Usuario no encontrado"
+            })
+        }
+        return res.estatus(200).json({
+            status: "success",
+            message: "Perfil del usuario",
+        })
+    } catch {
+        console.log('Error en la obtención del perfil del usuari')
+        return res.status(500).send({
+            status: "error",
+            message: "Error en la obtención del perfil del usuario"
+        })
+    }
+
+
+
+}

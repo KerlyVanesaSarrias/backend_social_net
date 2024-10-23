@@ -1,5 +1,6 @@
 import moment from "moment";
-import { secret } from "../services/jwt";
+import { secret} from "../services/jwt.js";
+import jwt from "jwt-simple"
 
 
 

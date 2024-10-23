@@ -20,5 +20,4 @@ const createToken = (user) => {
 export {
     secret,
     createToken,
-    
 }
