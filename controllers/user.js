@@ -137,15 +137,15 @@ export const profile = async (req, res) => {
 export const listUsers = async (req, res) => {
     try {
         let page = req.params.page ? parseInt(req.params.page, 10) : 1;
-        let itemsPerPage = req.query.limit ? parseInt(req.query.limit,10) : 4;
+        let itemsPerPage = req.query.limit ? parseInt(req.query.limit, 10) : 4;
         const options = {
             page: page,
             limit: itemsPerPage,
             select: "-password -role -email -_v"
         }
-        const users = await User.paginate({},options)
+        const users = await User.paginate({}, options)
 
-        if(!users || users.docs.length === 0){
+        if (!users || users.docs.length === 0) {
             return res.status(404).send({
                 status: "error",
                 message: "No hay usuarios"
@@ -156,11 +156,11 @@ export const listUsers = async (req, res) => {
             message: "Lista de usuarios",
             users: users.docs,
             totalDocs: users.totalDocs,
-            totalPages:users.totalPages,
+            totalPages: users.totalPages,
             currentPage: users.page
         });
-    
-    }catch (error) {
+
+    } catch (error) {
         console.log('Error en la obtención de usuarios')
         return res.status(500).send({
             status: "error",
@@ -168,3 +168,69 @@ export const listUsers = async (req, res) => {
         })
     }
 }
+
+export const updateUser = async (req, res) => {
+    try {
+        let userIdentity = req.user;  
+        let userToUpdate = req.body;  
+
+        delete userToUpdate.iat;
+        delete userToUpdate.exp;
+        delete userToUpdate.role;
+
+        const users = await User.find({
+            $or: [
+                { email: userToUpdate.email },
+                { nick: userToUpdate.nick }
+            ]
+        }).exec();
+
+        const isDuplicateUser = users.some(user => {
+            return user && user._id.toString() !== userIdentity.userId;
+        });
+
+        if (isDuplicateUser) {
+            return res.status(400).send({
+                status: "error",
+                message: "Error, solo se puede actualizar los datos del usuario logueado"
+            });
+        }
+
+        if (userToUpdate.password) {
+            try {
+                let pwd = await bcrypt.hash(userToUpdate.password, 10);
+                userToUpdate.password = pwd;
+            } catch (hashError) {
+                return res.status(500).send({
+                    status: "error",
+                    message: "Error al cifrar la contraseña"
+                });
+            }
+        } else {
+            delete userToUpdate.password;
+        }
+
+        let userUpdated = await User.findByIdAndUpdate(userIdentity.userId, userToUpdate, { new: true });
+
+        if (!userUpdated) {
+            return res.status(400).send({
+                status: "error",
+                message: "Error al actualizar el usuario"
+            });
+        };
+
+        return res.status(200).json({
+            status: "success",
+            message: "Usuario actualizado correctamente",
+            user: userUpdated
+        });
+
+    } catch (error) {
+        console.log("Error al actualizar los datos del usuario: ", error);
+        return res.status(500).send({
+            status: "error",
+            message: "Error al actualizar los datos del usuario"
+        });
+    }
+};
+
