@@ -104,10 +104,10 @@ export const login = async (req, res) => {
 };
 
 export const profile = async (req, res) => {
-    try{
+    try {
         const userId = req.params.id;
-        
-        if(!req.user || !req.eser.userId) {
+
+        if (!req.user || !req.eser.userId) {
             return res.status(401).send({
                 status: "success",
                 message: "usuario no autenticado"
@@ -115,7 +115,7 @@ export const profile = async (req, res) => {
         }
 
         const userProfile = await User.findById(userId).select("-password -role -email -_v")
-        if(!userProfile) {
+        if (!userProfile) {
             return res.status(404).send({
                 status: "error",
                 message: "Usuario no encontrado"
@@ -132,7 +132,39 @@ export const profile = async (req, res) => {
             message: "Error en la obtención del perfil del usuario"
         })
     }
+}
 
+export const listUsers = async (req, res) => {
+    try {
+        let page = req.params.page ? parseInt(req.params.page, 10) : 1;
+        let itemsPerPage = req.query.limit ? parseInt(req.query.limit,10) : 4;
+        const options = {
+            page: page,
+            limit: itemsPerPage,
+            select: "-password -role -email -_v"
+        }
+        const users = await User.paginate({},options)
 
-
+        if(!users || users.docs.length === 0){
+            return res.status(404).send({
+                status: "error",
+                message: "No hay usuarios"
+            })
+        }
+        return res.status(200).json({
+            status: "success",
+            message: "Lista de usuarios",
+            users: users.docs,
+            totalDocs: users.totalDocs,
+            totalPages:users.totalPages,
+            currentPage: users.page
+        });
+    
+    }catch (error) {
+        console.log('Error en la obtención de usuarios')
+        return res.status(500).send({
+            status: "error",
+            message: "Error en la obtención de usuarios"
+        })
+    }
 }

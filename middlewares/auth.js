@@ -6,13 +6,13 @@ import jwt from "jwt-simple"
 
 export const ensureAuth = (req, res, next ) => {
     if (!req.headers.authorization) {
-        return res.status(404).send({
+        return res.status(403).send({
             satus: "error",
             message: "No token provided"
         })
     }
 
-    const token = req.headers.authorization.replace(/['"]+/g).replace('Bearer',"");
+    const token = req.headers.authorization.replace(/['"]+/g,'').replace("Bearer ","");
 
     try {
         let payload = jwt.decode(token, secret);
