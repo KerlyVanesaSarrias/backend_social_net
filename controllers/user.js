@@ -107,73 +107,80 @@ export const profile = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        if (!req.user || !req.eser.userId) {
+        if (!req.user || !req.user.userId) {
             return res.status(401).send({
                 status: "success",
-                message: "usuario no autenticado"
-            })
+                message: "Usuario no autenticado"
+            });
         }
 
-        const userProfile = await User.findById(userId).select("-password -role -email -_v")
+        const userProfile = await User.findById(userId).select('-password -role -email -__v');
+
         if (!userProfile) {
             return res.status(404).send({
-                status: "error",
+                status: "success",
                 message: "Usuario no encontrado"
-            })
+            });
         }
-        return res.estatus(200).json({
+
+        return res.status(200).json({
             status: "success",
-            message: "Perfil del usuario",
-        })
-    } catch {
-        console.log('Error en la obtención del perfil del usuari')
+            user: userProfile
+        });
+
+    } catch (error) {
+        console.log("Error al obtener el perfil del usuario: ", error);
         return res.status(500).send({
             status: "error",
-            message: "Error en la obtención del perfil del usuario"
-        })
+            message: "Error al obtener el perfil del usuario"
+        });
     }
-}
+};
 
 export const listUsers = async (req, res) => {
     try {
         let page = req.params.page ? parseInt(req.params.page, 10) : 1;
         let itemsPerPage = req.query.limit ? parseInt(req.query.limit, 10) : 4;
+
         const options = {
             page: page,
             limit: itemsPerPage,
-            select: "-password -role -email -_v"
-        }
-        const users = await User.paginate({}, options)
+            select: '-password -email -role -__v'
+        };
+
+        const users = await User.paginate({}, options);
 
         if (!users || users.docs.length === 0) {
             return res.status(404).send({
                 status: "error",
-                message: "No hay usuarios"
-            })
+                message: "No existen usuarios disponibles"
+            });
         }
+
         return res.status(200).json({
             status: "success",
-            message: "Lista de usuarios",
             users: users.docs,
             totalDocs: users.totalDocs,
             totalPages: users.totalPages,
-            currentPage: users.page
+            CurrentPage: users.page
         });
 
     } catch (error) {
-        console.log('Error en la obtención de usuarios')
+        console.log("Error al listar los usuarios: ", error);
         return res.status(500).send({
             status: "error",
-            message: "Error en la obtención de usuarios"
-        })
+            message: "Error al listar los usuarios"
+        });
     }
-}
+};
+
 
 export const updateUser = async (req, res) => {
     try {
-        let userIdentity = req.user;  
-        let userToUpdate = req.body;  
 
+        let userIdentity = req.user; 
+        let userToUpdate = req.body; 
+    
         delete userToUpdate.iat;
         delete userToUpdate.exp;
         delete userToUpdate.role;
@@ -234,3 +241,72 @@ export const updateUser = async (req, res) => {
     }
 };
 
+export const uploadAvatar = async (req, res) => {
+    try {
+
+        if (!req.file) {
+            return res.status(400).send({
+                status: "error",
+                message: "Error la petición no incluye la imagen"
+            });
+        }
+
+
+        const avatarUrl = req.file.path;
+
+
+        const userUpdated = await User.findByIdAndUpdate(
+            req.user.userId,
+            { image: avatarUrl },
+            { new: true }
+        );
+
+
+        if (!userUpdated) {
+            return res.status(500).send({
+                status: "error",
+                message: "Error al subir el archivo del avatar"
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            user: userUpdated,
+            file: avatarUrl
+        });
+
+    } catch (error) {
+        console.log("Error al subir el archivo del avatar", error);
+        return res.status(500).send({
+            status: "error",
+            message: "Error al subir el archivo del avatar"
+        });
+    }
+};
+
+export const avatar = async (req, res) => {
+    try {
+
+        const userId = req.params.id;
+
+
+        const user = await User.findById(userId).select('image');
+
+
+        if (!user || !user.image) {
+            return res.status(404).send({
+                status: "error",
+                message: "No existe usuario o imagen"
+            });
+        }
+
+        return res.redirect(user.image);
+
+    } catch (error) {
+        console.log("Error al mostrar el archivo del avatar", error);
+        return res.status(500).send({
+            status: "error",
+            message: "Error al mostrar el archivo del avatar"
+        });
+    }
+};
