@@ -1,6 +1,10 @@
 import User from "../models/users.js"
 import bcrypt from "bcrypt";
 import { createToken } from "../services/jwt.js";
+import Follow from '../models/follows.js';
+import Publication from '../models/publications.js';
+import { followThisUser, followUserIds } from '../services/followServices.js';
+
 
 export const testUser = (req, res) => {
     return res.status(200).send({
@@ -123,9 +127,12 @@ export const profile = async (req, res) => {
             });
         }
 
+        const followInfo = await followThisUser(req.user.userId, userId);
+
         return res.status(200).json({
             status: "success",
-            user: userProfile
+            user: userProfile,
+            followInfo
         });
 
     } catch (error) {
@@ -157,14 +164,18 @@ export const listUsers = async (req, res) => {
             });
         }
 
+        let followUsers = await followUserIds(req);
+
+
         return res.status(200).json({
             status: "success",
             users: users.docs,
             totalDocs: users.totalDocs,
             totalPages: users.totalPages,
-            CurrentPage: users.page
+            CurrentPage: users.page,
+            users_following: followUsers.following,
+            user_follow_me: followUsers.followers
         });
-
     } catch (error) {
         console.log("Error al listar los usuarios: ", error);
         return res.status(500).send({
@@ -178,9 +189,9 @@ export const listUsers = async (req, res) => {
 export const updateUser = async (req, res) => {
     try {
 
-        let userIdentity = req.user; 
-        let userToUpdate = req.body; 
-    
+        let userIdentity = req.user;
+        let userToUpdate = req.body;
+
         delete userToUpdate.iat;
         delete userToUpdate.exp;
         delete userToUpdate.role;
@@ -310,3 +321,43 @@ export const avatar = async (req, res) => {
         });
     }
 };
+
+export const counters = async (req, res) => {
+    try {
+        let userId = req.user.userId;
+
+        if (req.params.id) {
+            userId = req.params.id;
+        }
+        const user = await User.findById(userId, { name: 1, last_name: 1 });
+
+        if (!user) {
+            return res.status(404).send({
+                status: "error",
+                message: "Usuario no encontrado"
+            });
+        }
+        const followingCount = await Follow.countDocuments({ "following_user": userId });
+
+        const followedCount = await Follow.countDocuments({ "followed_user": userId });
+
+        const publicationsCount = await Publication.countDocuments({ "user_id": userId });
+        
+        return res.status(200).json({
+            status: "success",
+            userId,
+            name: user.name,
+            last_name: user.last_name,
+            followingCount: followingCount,
+            followedCount: followedCount,
+            publicationsCount: publicationsCount
+        });
+
+    } catch (error) {
+        console.log("Error en los contadores", error)
+        return res.status(500).send({
+            status: "error",
+            message: "Error en los contadores"
+        });
+    }
+}

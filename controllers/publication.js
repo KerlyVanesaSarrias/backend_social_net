@@ -21,7 +21,6 @@ export const savePublication = async (req, res) => {
 
         let newPublication = new Publication(params);
 
- 
         newPublication.user_id = req.user.userId;
 
         const publicationStored = await newPublication.save();
