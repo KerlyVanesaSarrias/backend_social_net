@@ -52,7 +52,7 @@ export const showPublication = async (req, res) => {
 
         const publicationId = req.params.id;
 
-        const publicationStored = await Publication.findById(publicationId).populate('user_id', 'name last_name');
+        const publicationStored = await Publication.findById(publicationId).populate('user_id', 'name last_name nick image');
 
         if (!publicationStored) {
             return res.status(404).send({
