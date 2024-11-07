@@ -15,7 +15,7 @@ export const testUser = (req, res) => {
 export const register = async (req, res) => {
     try {
         let params = req.body;
-        if (!params.name || !params.last_name || !params.nick || !params.email || !params.password) {
+        if (!params.name || !params.lastName || !params.nick || !params.email || !params.password) {
             return res.status(400).json({
                 status: "error",
                 message: "Faltan datos por enviar"
